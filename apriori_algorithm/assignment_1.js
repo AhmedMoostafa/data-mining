@@ -16,7 +16,6 @@ const readData = async (fileName) => {
   return dataSet;
 };
 const itemSetTable = async (dataSet) => {
-  //fs.writeFileSync("test.json", JSON.stringify(dataSet));
   const itemSet = new Map();
   for (let i = 1; i < dataSet.length; i++) {
     for (let j = 1; j < dataSet[i].length; j++) {
@@ -38,7 +37,7 @@ const filterItemSetTable = async (minSupport, itemSetTable) => {
   }
   return itemSetTable;
 };
-const getcombinations = async (items, setLength) => {
+const getCombinations = async (items, setLength) => {
   const finalCombinations = [];
   for (let i = 0; i < items.length - 1; i++) {
     for (let j = i + 1; j < items.length; j++) {
@@ -124,7 +123,7 @@ const getAssociationRulesForAllSets = async (dataSet, combinations) => {
   return result;
 };
 
-const FilterBycConfidence = async (rules, dataSet, minConfidence) => {
+const filterBycConfidence = async (rules, dataSet, minConfidence) => {
   for (let i = 0; i < rules.length; i++) {
     const rule = [...rules[i][0][0], ...rules[i][0][1]];
 
@@ -155,7 +154,7 @@ const main = async () => {
   let i = 2;
   let list;
   while (true) {
-    let combinations = await getcombinations(items, i);
+    let combinations = await getCombinations(items, i);
     table = await calcSupportCountForItems(dataSet, combinations);
     table = await filterItemSetTable(10, table);
     if (table.size === 0) {
@@ -173,6 +172,6 @@ const main = async () => {
     list[i] = [...list[i].split(",")];
   }
   let rules = await getAssociationRulesForAllSets(dataSet, list);
-  await FilterBycConfidence(rules, dataSet, 0.5);
+  await filterBycConfidence(rules, dataSet, 0.5);
 };
 main();
