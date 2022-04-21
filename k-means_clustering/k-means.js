@@ -106,6 +106,7 @@ let isNoChange = (oldCentroids, newCentroids) => {
       }
     }
   }
+
   return true;
 };
 const main = async () => {
@@ -113,6 +114,7 @@ const main = async () => {
   let centroids = getRandomCentroids(dataSet, NumberOFClusters);
   let clusters = [];
   while (true) {
+    clusters = [];
     for (let i = 0; i < dataSet.length; i++) {
       let clusterNumber = await getCloserCluster(
         dataSet[i],
@@ -133,7 +135,13 @@ const main = async () => {
       break;
     }
   }
-  console.log(clusters);
+  for (let i = 0; i < clusters.length; i++) {
+    console.log(`cluster: ${i + 1} `);
+    for (let j = 0; j < clusters[i].length; j++) {
+      console.log(clusters[i][j][0]);
+    }
+  }
+  // console.log(clusters);
 };
 
 main();
