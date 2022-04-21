@@ -3,15 +3,15 @@ const FILE_NAME = "Power_Consumption.csv";
 let NumberOFClusters = 3;
 const manhattanDistance = (p1, p2) => {
   let distance = 0;
-  for (let i = 0; i < p1.length; i++) {
-    distance += Math.abs(p1[i] - p2[i]);
+  for (let i = 1; i < p1.length; i++) {
+    distance += Math.abs(p1[i] - p2[i - 1]);
   }
   return distance;
 };
 const euclideanDistance = (p1, p2) => {
   let distance = 0;
-  for (let i = 0; i < p1.length; i++) {
-    distance += Math.pow(p1[i] - p2[i], 2);
+  for (let i = 1; i < p1.length; i++) {
+    distance += Math.pow(p1[i] - p2[i - 1], 2);
   }
   return +Math.sqrt(distance).toFixed(2);
 };
@@ -23,7 +23,6 @@ const readData = async (fileName) => {
     .map((line, index) => {
       if (index != 0) {
         line = line.split(",").filter((i) => i);
-        line.shift();
         line = line.map((num) => {
           return +num;
         });
@@ -38,7 +37,7 @@ const getRandomCentroids = (dataSet, numberOfClusters) => {
   let set = new Set();
   let centroids = [];
   while (true) {
-    let number = Math.abs(Math.floor(Math.random() * dataSet.length - 1));
+    let number = Math.abs(Math.floor(Math.random() * dataSet.length));
     if (set.size === numberOfClusters) {
       break;
     }
@@ -46,8 +45,11 @@ const getRandomCentroids = (dataSet, numberOfClusters) => {
   }
   let randomNumbers = [...set];
   for (let i = 0; i < numberOfClusters; i++) {
-    centroids.push(dataSet[randomNumbers[i]]);
+    let temp = [...dataSet[randomNumbers[i]]];
+    temp.shift();
+    centroids.push(temp);
   }
+  // console.log(randomNumbers);
   return centroids;
 };
 const getCloserCluster = async (
@@ -75,14 +77,17 @@ const getCloserCluster = async (
 const mean = async (cluster) => {
   let clusterSize = cluster.length;
   let result = cluster[0];
-  for (let i = 1; i < cluster.length; i++) {
-    result = result.map(function (num, index) {
-      return num + cluster[i][index];
+  if (result != undefined) {
+    for (let i = 1; i < cluster.length; i++) {
+      result = result.map(function (num, index) {
+        return num + cluster[i][index];
+      });
+    }
+    result = result.map((num) => {
+      return +(num / clusterSize).toFixed(2);
     });
+    result.shift();
   }
-  result = result.map((num) => {
-    return +(num / clusterSize).toFixed(2);
-  });
   return result;
 };
 
@@ -114,7 +119,7 @@ const main = async () => {
   let centroids = getRandomCentroids(dataSet, NumberOFClusters);
   let clusters = [];
   while (true) {
-    clusters = [];
+    clusters = [[], [], []];
     for (let i = 0; i < dataSet.length; i++) {
       let clusterNumber = await getCloserCluster(
         dataSet[i],
@@ -141,7 +146,6 @@ const main = async () => {
       console.log(clusters[i][j][0]);
     }
   }
-  // console.log(clusters);
 };
 
 main();
