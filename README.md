@@ -2,7 +2,7 @@
 #### Nodejs App
 
 ### apriori_algorithm
-to run apriori_algorithm
+to run apriori algorithm
 ```sh
 node assignment_1.js
 ```
