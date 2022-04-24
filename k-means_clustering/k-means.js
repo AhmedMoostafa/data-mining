@@ -1,4 +1,5 @@
 const fs = require("fs");
+const { detectOutliersForAllClusters } = require("./outliers");
 const FILE_NAME = "Power_Consumption.csv";
 let NumberOFClusters = 3;
 const manhattanDistance = (p1, p2) => {
@@ -13,7 +14,7 @@ const euclideanDistance = (p1, p2) => {
   for (let i = 1; i < p1.length; i++) {
     distance += Math.pow(p1[i] - p2[i - 1], 2);
   }
-  return +Math.sqrt(distance).toFixed(2);
+  return +Math.sqrt(distance);
 };
 const readData = async (fileName) => {
   const dataSet = fs
@@ -50,7 +51,7 @@ const getRandomCentroids = (dataSet, numberOfClusters) => {
     centroids.push(temp);
   }
   // console.log(randomNumbers);
-  return centroids;
+  return [centroids, randomNumbers];
 };
 const getCloserCluster = async (
   point,
@@ -58,18 +59,20 @@ const getCloserCluster = async (
   numberOfClusters,
   distanceMeasure
 ) => {
-  let clusterNumber,
+  let clusterNumber = 0,
     distance = Number.MAX_SAFE_INTEGER;
   for (let i = 0; i < numberOfClusters; i++) {
     let temp;
-    if (distanceMeasure === "manhattan") {
-      temp = manhattanDistance(point, centroids[i]);
-    } else {
-      temp = euclideanDistance(point, centroids[i]);
-    }
-    if (temp < distance) {
-      distance = +temp.toFixed(2);
-      clusterNumber = i;
+    if (centroids[i] !== undefined) {
+      if (distanceMeasure === "manhattan") {
+        temp = manhattanDistance(point, centroids[i]);
+      } else {
+        temp = euclideanDistance(point, centroids[i]);
+      }
+      if (temp < distance) {
+        distance = +temp;
+        clusterNumber = i;
+      }
     }
   }
   return clusterNumber;
@@ -84,7 +87,7 @@ const mean = async (cluster) => {
       });
     }
     result = result.map((num) => {
-      return +(num / clusterSize).toFixed(2);
+      return +(num / clusterSize);
     });
     result.shift();
   }
@@ -114,12 +117,32 @@ let isNoChange = (oldCentroids, newCentroids) => {
 
   return true;
 };
+let finalCentroids;
+const getCusterIds = (clusters) => {
+  let clusterPointsIds = [];
+  for (let i = 0; i < clusters.length; i++) {
+    let temp = [];
+    for (let j = 0; j < clusters[i].length; j++) {
+      temp.push(clusters[i][j][0]);
+    }
+    clusterPointsIds.push(temp);
+  }
+  return clusterPointsIds;
+};
 const main = async () => {
   let dataSet = await readData(FILE_NAME);
-  let centroids = getRandomCentroids(dataSet, NumberOFClusters);
+
+  let [centroids, randomNumbers] = getRandomCentroids(
+    dataSet,
+    NumberOFClusters
+  );
   let clusters = [];
+  for (let index = 0; index < centroids.length; index++) {
+    clusters.push([dataSet[randomNumbers[index]]]);
+  }
+  console.log();
   while (true) {
-    clusters = [[], [], []];
+    clusters = [];
     for (let i = 0; i < dataSet.length; i++) {
       let clusterNumber = await getCloserCluster(
         dataSet[i],
@@ -127,25 +150,30 @@ const main = async () => {
         NumberOFClusters,
         "manhattan"
       );
+      //  console.log(dataSet[randomNumbers[clusterNumber]]);
       clusters[clusterNumber] === undefined
         ? (clusters[clusterNumber] = [])
         : 0;
       clusters[clusterNumber].push(dataSet[i]);
     }
     let newCentroids = await calcNewCentroids(clusters);
-
+    finalCentroids = newCentroids;
     if (!isNoChange(centroids, newCentroids)) {
       centroids = newCentroids;
     } else {
       break;
     }
   }
-  for (let i = 0; i < clusters.length; i++) {
-    console.log(`cluster: ${i + 1} `);
-    for (let j = 0; j < clusters[i].length; j++) {
-      console.log(clusters[i][j][0]);
-    }
-  }
+  let clusterPointsIds = getCusterIds(clusters);
+  let newClusters = await detectOutliersForAllClusters(
+    dataSet,
+    finalCentroids,
+    clusters,
+    manhattanDistance
+  );
+  newClusters = getCusterIds(newClusters);
+  console.log(clusterPointsIds);
+  console.log(newClusters);
 };
 
 main();
